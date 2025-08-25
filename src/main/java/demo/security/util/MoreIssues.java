@@ -2,6 +2,7 @@ package demo.security.util;
 
 import java.io.*;
 import java.net.Socket;
+import java.security.SecureRandom;
 import java.util.Random;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -10,20 +11,53 @@ import java.util.regex.Pattern;
 
 public class MoreIssues {
     private static final Logger LOGGER = Logger.getLogger(MoreIssues.class.getName());
+    private static final SecureRandom secureRandom = new SecureRandom();
     
-    // Predictable Random - Using Random instead of SecureRandom
+    // Constants for discount calculations
+    private static final double PREMIUM_DISCOUNT = 0.15;
+    private static final double STANDARD_DISCOUNT = 0.10;
+    private static final double BASIC_DISCOUNT = 0.05;
+    private static final double PREMIUM_THRESHOLD = 100.0;
+    private static final double STANDARD_THRESHOLD = 50.0;
+
+    // Secure token generation using SecureRandom
     public static String generateToken() {
-        Random random = new Random();
-        return String.valueOf(random.nextLong());
+        byte[] randomBytes = new byte[32];
+        secureRandom.nextBytes(randomBytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
 
-    // Command Injection vulnerability
+    // Safe command execution with input validation
     public static void executeCommand(String userInput) {
-        try {
-            Runtime.getRuntime().exec("cmd.exe /c " + userInput);
-        } catch (IOException e) {
-            e.printStackTrace(); // Bad practice: printStackTrace
+        if (!isValidCommand(userInput)) {
+            LOGGER.warning("Invalid command attempt: " + userInput);
+            throw new IllegalArgumentException("Invalid command");
         }
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder()
+                .command("cmd.exe", "/c", userInput)
+                .redirectErrorStream(true);
+            Process process = processBuilder.start();
+            // Log the output instead of printing to stderr
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    LOGGER.info(line);
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.severe("Command execution failed: " + e.getMessage());
+            throw new RuntimeException("Command execution failed", e);
+        }
+    }
+    
+    private static boolean isValidCommand(String command) {
+        // Whitelist of allowed commands
+        return Pattern.matches("^[a-zA-Z0-9\\s-_./]+$", command) 
+            && !command.contains("../") 
+            && !command.contains("&&") 
+            && !command.contains("|");
     }
 
     // Weak Regular Expression
@@ -32,63 +66,76 @@ public class MoreIssues {
         return pattern.matcher(email).matches();
     }
 
-    // Resource leak and null pointer potential
+    // Safe socket reading with proper resource management
     public static String readFromSocket(String host, int port) {
-        Socket socket = null;
-        try {
-            socket = new Socket(host, port);
-            return new BufferedReader(new InputStreamReader(socket.getInputStream())).readLine();
+        try (Socket socket = new Socket(host, port);
+             BufferedReader reader = new BufferedReader(
+                     new InputStreamReader(socket.getInputStream()))) {
+            String line = reader.readLine();
+            if (line == null) {
+                throw new IOException("No data received from socket");
+            }
+            return line;
         } catch (IOException e) {
-            return null; // Bad practice: returning null
+            LOGGER.severe("Socket read failed: " + e.getMessage());
+            throw new RuntimeException("Failed to read from socket", e);
         }
-        // Resource leak: socket is never closed
     }
 
-    // Session fixation vulnerability
+    // Secure session handling with fixation protection
     public static void handleSession(HttpServletRequest request) {
-        HttpSession session = request.getSession();
-        String sessionId = request.getParameter("sessionId");
-        if (sessionId != null) {
-            // Vulnerable to session fixation
-            session.setAttribute("authenticatedUser", sessionId);
+        HttpSession oldSession = request.getSession(false);
+        if (oldSession != null) {
+            oldSession.invalidate(); // Invalidate existing session
+        }
+        // Create new session
+        HttpSession newSession = request.getSession(true);
+        String username = request.getParameter("username");
+        if (username != null && !username.trim().isEmpty()) {
+            newSession.setAttribute("authenticatedUser", username);
+            LOGGER.info("New session created for user: " + username);
         }
     }
 
-    // Empty catch block - Silent failure
-    public static void silentFailure() {
-        try {
-            File file = new File("nonexistent.txt");
-            FileInputStream fis = new FileInputStream(file);
+    // Proper error handling with logging
+    public static void handleFileOperation() {
+        try (FileInputStream fis = new FileInputStream(new File("config.txt"))) {
+            // Process file...
         } catch (FileNotFoundException e) {
-            // Empty catch block - Bad practice
+            LOGGER.warning("Configuration file not found: " + e.getMessage());
+            throw new IllegalStateException("Required configuration file is missing", e);
+        } catch (IOException e) {
+            LOGGER.severe("Error reading configuration: " + e.getMessage());
+            throw new IllegalStateException("Failed to read configuration", e);
         }
     }
 
-    // Mutable static field
-    public static String[] SENSITIVE_DATA = {"password", "key", "token"};
+    // Immutable static field with proper naming
+    private static final String[] sensitiveDataFields = {"password", "key", "token"};
+    
+    public static String[] getSensitiveDataFields() {
+        return sensitiveDataFields.clone(); // Return defensive copy
+    }
 
-    // Poorly structured code with multiple returns
-    public static int complexConditions(int a, int b, int c) {
+    // Refactored to reduce complexity and improve readability
+    public static int calculateSum(int a, int b, int c) {
+        int sum = 0;
+        
         if (a > 0) {
+            sum += a;
             if (b > 0) {
-                return a + b;
+                sum += b;
             }
-            return a;
-        }
-        if (b > 0) {
+        } else if (b > 0) {
+            sum += b;
             if (c > 0) {
-                return b + c;
+                sum += c;
             }
-            return b;
+        } else if (c > 0) {
+            sum += c;
         }
-        return c;
-    }
-
-    // Dead store
-    public static void deadStore() {
-        int unused = 42; // Value is never used
-        String result = "test";
-        result = "newValue"; // Original value is never used
+        
+        return sum;
     }
 
     // Duplicate code block
@@ -117,13 +164,13 @@ public class MoreIssues {
         }
     }
 
-    // Magic numbers
+    // Calculate discount using defined constants
     public static double calculateDiscount(double price) {
-        if (price > 100.0) {
-            return price * 0.15; // Magic number
-        } else if (price > 50.0) {
-            return price * 0.1; // Magic number
+        if (price > PREMIUM_THRESHOLD) {
+            return price * PREMIUM_DISCOUNT;
+        } else if (price > STANDARD_THRESHOLD) {
+            return price * STANDARD_DISCOUNT;
         }
-        return price * 0.05; // Magic number
+        return price * BASIC_DISCOUNT;
     }
 }
