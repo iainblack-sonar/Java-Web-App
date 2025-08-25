@@ -126,4 +126,54 @@ public class MoreIssues {
         }
         return price * 0.05; // Magic number
     }
+    
+    // Using weak SSL/TLS configuration
+    public static Socket createInsecureSocket(String host, int port) throws IOException {
+        Socket socket = new Socket(host, port);
+        // Missing proper SSL/TLS configuration
+        return socket;
+    }
+
+    // Hardcoded password in code
+    private static final String ADMIN_PASSWORD = "admin123";
+    public static boolean validateAdminPassword(String password) {
+        return ADMIN_PASSWORD.equals(password);
+    }
+
+    // Insecure deserialization without type checking
+    public static Object deserializeUnsafe(byte[] data) throws Exception {
+        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
+        return ois.readObject(); // Vulnerable to deserialization attacks
+    }
+
+    // Using null cipher - effectively no encryption
+    public static byte[] nullCipher(byte[] data) {
+        return data; // No encryption at all
+    }
+
+    // Storing sensitive data in plaintext
+    public static void storeCredentials(String username, String password) {
+        try (FileWriter fw = new FileWriter("credentials.txt", true)) {
+            fw.write(username + ":" + password + "\n"); // Storing passwords in plaintext
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // LDAP injection vulnerability
+    public static void searchLDAP(String userInput) {
+        String searchFilter = "(cn=" + userInput + ")"; // No input validation
+        // Imagine LDAP search happening here
+    }
+
+    // Insufficient random string generation
+    public static String generateWeakPassword() {
+        Random random = new Random();
+        String chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        StringBuilder password = new StringBuilder();
+        for (int i = 0; i < 8; i++) { // Too short password
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return password.toString();
+    }
 }
