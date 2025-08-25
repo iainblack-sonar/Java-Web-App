@@ -2,8 +2,14 @@ package demo.security.util;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Random;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -125,5 +131,42 @@ public class MoreIssues {
             return price * 0.1; // Magic number
         }
         return price * 0.05; // Magic number
+    }
+
+    // Weak encryption - using base64 as "encryption"
+    public static String weakEncryption(String input) {
+        return new String(java.util.Base64.getEncoder().encode(input.getBytes()));
+    }
+
+    // SQL Injection vulnerability
+    public static void executeQuery(Connection conn, String userInput) throws SQLException {
+        Statement stmt = conn.createStatement();
+        stmt.execute("SELECT * FROM users WHERE id = " + userInput); // Direct string concatenation
+    }
+
+    // Hardcoded password
+    private static final String DB_PASSWORD = "mySecretPassword123";
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb", "admin", DB_PASSWORD);
+    }
+
+    // Cross-Site Scripting (XSS) vulnerability
+    public static void writeToResponse(HttpServletResponse response, String userInput) throws IOException {
+        response.setContentType("text/html");
+        response.getWriter().write("<div>" + userInput + "</div>"); // Direct injection of user input
+    }
+
+    // Path traversal vulnerability
+    public static String readFileContent(String fileName) throws IOException {
+        File file = new File("/usr/local/app/" + fileName); // No path validation
+        return new String(Files.readAllBytes(file.toPath()));
+    }
+
+    // Infinite recursion potential
+    public static int recursiveFunction(int n) {
+        if (n > 0) {
+            return n + recursiveFunction(n - 1);
+        }
+        return recursiveFunction(n + 1); // Will cause infinite recursion for n <= 0
     }
 }
