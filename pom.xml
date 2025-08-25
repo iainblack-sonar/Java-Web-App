@@ -13,6 +13,7 @@
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <sonar.organization>iainblack-sonar</sonar.organization>
+    <sonar.projectName>Java Web App</sonar.projectName>
   </properties>
   <dependencies>
     <dependency>
