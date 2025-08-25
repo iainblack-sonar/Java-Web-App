@@ -13,12 +13,6 @@ public class MoreIssues {
     private static final Logger LOGGER = Logger.getLogger(MoreIssues.class.getName());
     private static final SecureRandom secureRandom = new SecureRandom();
     
-    // Constants for discount calculations
-    private static final double PREMIUM_DISCOUNT = 0.15;
-    private static final double STANDARD_DISCOUNT = 0.10;
-    private static final double BASIC_DISCOUNT = 0.05;
-    private static final double PREMIUM_THRESHOLD = 100.0;
-    private static final double STANDARD_THRESHOLD = 50.0;
 
     // Secure token generation using SecureRandom
     public static String generateToken() {
@@ -66,34 +60,25 @@ public class MoreIssues {
         return pattern.matcher(email).matches();
     }
 
-    // Safe socket reading with proper resource management
+    // Resource leak and null pointer potential
     public static String readFromSocket(String host, int port) {
-        try (Socket socket = new Socket(host, port);
-             BufferedReader reader = new BufferedReader(
-                     new InputStreamReader(socket.getInputStream()))) {
-            String line = reader.readLine();
-            if (line == null) {
-                throw new IOException("No data received from socket");
-            }
-            return line;
+        Socket socket = null;
+        try {
+            socket = new Socket(host, port);
+            return new BufferedReader(new InputStreamReader(socket.getInputStream())).readLine();
         } catch (IOException e) {
-            LOGGER.severe("Socket read failed: " + e.getMessage());
-            throw new RuntimeException("Failed to read from socket", e);
+            return null; // Bad practice: returning null
         }
+        // Resource leak: socket is never closed
     }
 
-    // Secure session handling with fixation protection
+    // Session fixation vulnerability
     public static void handleSession(HttpServletRequest request) {
-        HttpSession oldSession = request.getSession(false);
-        if (oldSession != null) {
-            oldSession.invalidate(); // Invalidate existing session
-        }
-        // Create new session
-        HttpSession newSession = request.getSession(true);
-        String username = request.getParameter("username");
-        if (username != null && !username.trim().isEmpty()) {
-            newSession.setAttribute("authenticatedUser", username);
-            LOGGER.info("New session created for user: " + username);
+        HttpSession session = request.getSession();
+        String sessionId = request.getParameter("sessionId");
+        if (sessionId != null) {
+            // Vulnerable to session fixation
+            session.setAttribute("authenticatedUser", sessionId);
         }
     }
 
@@ -110,67 +95,16 @@ public class MoreIssues {
         }
     }
 
-    // Immutable static field with proper naming
-    private static final String[] sensitiveDataFields = {"password", "key", "token"};
+    // Mutable static field - intentional issue
+    public static String[] SENSITIVE_DATA = {"password", "key", "token"};
     
-    public static String[] getSensitiveDataFields() {
-        return sensitiveDataFields.clone(); // Return defensive copy
-    }
-
-    // Refactored to reduce complexity and improve readability
-    public static int calculateSum(int a, int b, int c) {
-        int sum = 0;
-        
-        if (a > 0) {
-            sum += a;
-            if (b > 0) {
-                sum += b;
-            }
-        } else if (b > 0) {
-            sum += b;
-            if (c > 0) {
-                sum += c;
-            }
-        } else if (c > 0) {
-            sum += c;
-        }
-        
-        return sum;
-    }
-
-    // Duplicate code block
-    public static void duplicateBlock1() {
-        int sum = 0;
-        for (int i = 0; i < 10; i++) {
-            sum += i;
-            System.out.println("Current sum: " + sum);
-            if (sum > 50) {
-                System.out.println("Sum exceeded 50");
-                break;
-            }
-        }
-    }
-
-    // Duplicate code block
-    public static void duplicateBlock2() {
-        int sum = 0;
-        for (int i = 0; i < 10; i++) {
-            sum += i;
-            System.out.println("Current sum: " + sum);
-            if (sum > 50) {
-                System.out.println("Sum exceeded 50");
-                break;
-            }
-        }
-    }
-
-    // Calculate discount using defined constants
+    // Calculate discount with magic numbers - intentional issue
     public static double calculateDiscount(double price) {
-        if (price > PREMIUM_THRESHOLD) {
-            return price * PREMIUM_DISCOUNT;
-        } else if (price > STANDARD_THRESHOLD) {
-            return price * STANDARD_DISCOUNT;
+        if (price > 100.0) {
+            return price * 0.15;
+        } else if (price > 50.0) {
+            return price * 0.1;
         }
-        return price * BASIC_DISCOUNT;
+        return price * 0.05;
     }
 }
