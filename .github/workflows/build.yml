@@ -1,17 +1,17 @@
-name: Build
-
+name: SonarQube
 on:
   push:
     branches:
       - main
+      - develop
+      - staging
+      - feature/*
   pull_request:
     types: [opened, synchronize, reopened]
-
 jobs:
   build:
     name: Build and analyze
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,5 +36,4 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=iainblack-sonar_github-java_7ca8dc30-09cc-4432-b3c7-b6d3e9fd734f -Dsonar.projectName='github-java'
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=iainblack-sonar_Java-Web-App -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
