@@ -33,8 +33,8 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
-      - name: Run tests and generate coverage reports
-        run: mvn -B clean post-integration-test -Pcoverage
+      - name: Run tests and generate coverage report
+        run: mvn -B clean test jacoco:report -Pcoverage
       - name: Build and analyze with SonarQube
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
