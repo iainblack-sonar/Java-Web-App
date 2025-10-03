@@ -164,7 +164,7 @@
           </execution>
           <execution>
             <id>merge-results</id>
-            <phase>verify</phase>
+            <phase>post-integration-test</phase>
             <goals>
               <goal>merge</goal>
             </goals>
@@ -182,7 +182,7 @@
           </execution>
           <execution>
             <id>merged-report</id>
-            <phase>verify</phase>
+            <phase>post-integration-test</phase>
             <goals>
               <goal>report</goal>
             </goals>
