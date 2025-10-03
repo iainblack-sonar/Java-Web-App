@@ -93,6 +93,42 @@
   </dependencies>
 
   <build>
+    <!-- 
+    ===============================================================================
+    TESTING STRATEGY OVERVIEW
+    ===============================================================================
+    
+    This project demonstrates separate unit and integration test execution with
+    individual coverage reporting for SonarQube analysis.
+    
+    TEST TYPES:
+    - Unit Tests (*Test.java): Test individual classes/methods in isolation
+    - Integration Tests (*IT.java): Test component interactions and real functionality
+    
+    MAVEN PHASES EXECUTION ORDER:
+    1. test                    -> Run unit tests (*Test.java) via Surefire
+    2. integration-test        -> Run integration tests (*IT.java) via Failsafe  
+    3. post-integration-test   -> Generate integration test coverage report
+    4. verify                  -> Verify integration test results
+    
+    COVERAGE REPORTS GENERATED (when using -Pcoverage):
+    - target/site/jacoco/jacoco.xml       -> Unit test coverage
+    - target/site/jacoco-it/jacoco.xml    -> Integration test coverage
+    
+    TEST EXECUTION REPORTS GENERATED:
+    - target/surefire-reports/*.xml       -> Unit test execution results (pass/fail)
+    - target/failsafe-reports/*.xml       -> Integration test execution results (pass/fail)
+    
+    SONARQUBE INTEGRATION:
+    Coverage reports: -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml,target/site/jacoco-it/jacoco.xml
+    Test execution:   -Dsonar.junit.reportPaths=target/surefire-reports,target/failsafe-reports
+    
+    USAGE EXAMPLES:
+    mvn clean test                                           -> Unit tests only
+    mvn clean test integration-test -Pcoverage               -> Unit + Integration tests with coverage
+    mvn clean test integration-test post-integration-test   -> Full test cycle with reports
+    ===============================================================================
+    -->
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -103,14 +139,19 @@
           <target>17</target>
         </configuration>
       </plugin>
+      <!-- UNIT TEST CONFIGURATION -->
+      <!-- Surefire plugin runs unit tests (*Test.java) during 'test' phase -->
+      <!-- Generates: target/surefire-reports/*.xml (test execution results for SonarQube) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.1.2</version>
         <configuration>
+          <!-- Exclude integration tests from unit test execution -->
           <excludes>
             <exclude>**/*IT.java</exclude>
           </excludes>
+          <!-- Use JaCoCo agent for coverage collection (set by jacoco:prepare-agent) -->
           <argLine>@{argLine} -XX:+EnableDynamicAgentLoading</argLine>
         </configuration>
       </plugin>
@@ -119,6 +160,9 @@
         <artifactId>maven-war-plugin</artifactId>
         <version>3.3.2</version>
       </plugin>
+      <!-- INTEGRATION TEST CONFIGURATION -->
+      <!-- Failsafe plugin runs integration tests (*IT.java) during 'integration-test' phase -->
+      <!-- Generates: target/failsafe-reports/*.xml (test execution results for SonarQube) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -126,15 +170,19 @@
         <executions>
           <execution>
             <goals>
+              <!-- Run integration tests during 'integration-test' phase -->
               <goal>integration-test</goal>
+              <!-- Verify results during 'verify' phase -->
               <goal>verify</goal>
             </goals>
           </execution>
         </executions>
         <configuration>
+          <!-- Include only integration test files -->
           <includes>
             <include>**/*IT.java</include>
           </includes>
+          <!-- Use JaCoCo agent for coverage collection (set by jacoco:prepare-agent-integration) -->
           <argLine>@{argLine} -XX:+EnableDynamicAgentLoading</argLine>
         </configuration>
       </plugin>
@@ -154,27 +202,44 @@
   </build>
 
   <profiles>
+    <!-- COVERAGE PROFILE: Enables JaCoCo code coverage for both unit and integration tests -->
+    <!-- Usage: mvn clean test integration-test post-integration-test -Pcoverage -->
     <profile>
       <id>coverage</id>
       <build>
         <plugins>
+          <!-- JACOCO COVERAGE CONFIGURATION -->
+          <!-- Provides code coverage analysis for both unit and integration tests -->
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
             <version>0.8.11</version>
             <executions>
+              
+              <!-- STEP 1: Prepare JaCoCo agent for UNIT TESTS -->
+              <!-- Runs before unit tests to instrument classes for coverage collection -->
+              <!-- Output: target/jacoco.exec (binary coverage data) -->
               <execution>
                 <id>prepare-agent</id>
                 <goals>
                   <goal>prepare-agent</goal>
                 </goals>
               </execution>
+              
+              <!-- STEP 2: Prepare JaCoCo agent for INTEGRATION TESTS -->
+              <!-- Runs before integration tests to instrument classes for coverage collection -->
+              <!-- Output: target/jacoco-it.exec (binary coverage data) -->
               <execution>
                 <id>prepare-agent-integration</id>
                 <goals>
                   <goal>prepare-agent-integration</goal>
                 </goals>
               </execution>
+              
+              <!-- STEP 3: Generate UNIT TEST coverage report -->
+              <!-- Runs after unit tests (test phase) to create XML report -->
+              <!-- Input: target/jacoco.exec -->
+              <!-- Output: target/site/jacoco/jacoco.xml -->
               <execution>
                 <id>report</id>
                 <phase>test</phase>
@@ -187,6 +252,11 @@
                   </formats>
                 </configuration>
               </execution>
+              
+              <!-- STEP 4: Generate INTEGRATION TEST coverage report -->
+              <!-- Runs after integration tests (post-integration-test phase) to create XML report -->
+              <!-- Input: target/jacoco-it.exec -->
+              <!-- Output: target/site/jacoco-it/jacoco.xml -->
               <execution>
                 <id>report-integration</id>
                 <phase>post-integration-test</phase>
@@ -200,8 +270,10 @@
                   </formats>
                 </configuration>
               </execution>
+              
             </executions>
             <configuration>
+              <!-- Exclude system classes from coverage analysis -->
               <excludes>
                 <exclude>com/sun/**</exclude>
                 <exclude>java/**</exclude>
