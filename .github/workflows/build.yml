@@ -34,8 +34,8 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Run tests and generate coverage reports
-        run: mvn -B clean post-integration-test
+        run: mvn -B clean post-integration-test -Pcoverage
       - name: Build and analyze with SonarQube
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=iainblack-sonar_Java-Web-App -Dsonar.junit.reportPaths=target/surefire-reports,target/failsafe-reports
+        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=iainblack-sonar_Java-Web-App -Dsonar.junit.reportPaths=target/surefire-reports,target/failsafe-reports -Pcoverage
