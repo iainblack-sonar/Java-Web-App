@@ -135,7 +135,7 @@
           <includes>
             <include>**/*IT.java</include>
           </includes>
-          <argLine>${failsafeArgLine} -XX:+EnableDynamicAgentLoading</argLine>
+          <argLine>@{argLine} -XX:+EnableDynamicAgentLoading</argLine>
         </configuration>
       </plugin>
       <plugin>
@@ -170,7 +170,14 @@
                 </goals>
               </execution>
               <execution>
+                <id>prepare-agent-integration</id>
+                <goals>
+                  <goal>prepare-agent-integration</goal>
+                </goals>
+              </execution>
+              <execution>
                 <id>report</id>
+                <phase>test</phase>
                 <goals>
                   <goal>report</goal>
                 </goals>
@@ -180,7 +187,31 @@
                   </formats>
                 </configuration>
               </execution>
+              <execution>
+                <id>report-integration</id>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>report-integration</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${project.reporting.outputDirectory}/jacoco-it</outputDirectory>
+                  <formats>
+                    <format>XML</format>
+                  </formats>
+                </configuration>
+              </execution>
             </executions>
+            <configuration>
+              <excludes>
+                <exclude>com/sun/**</exclude>
+                <exclude>java/**</exclude>
+                <exclude>javax/**</exclude>
+                <exclude>sun/**</exclude>
+                <exclude>jdk/**</exclude>
+                <exclude>org/eclipse/**</exclude>
+                <exclude>net/bytebuddy/**</exclude>
+              </excludes>
+            </configuration>
           </plugin>
         </plugins>
       </build>

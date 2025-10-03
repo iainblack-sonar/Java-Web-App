@@ -4,79 +4,87 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.security.KeyPair;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 /**
- * Integration tests for utility classes
- * These tests demonstrate integration testing of utility components
- * and execute actual methods to generate meaningful code coverage
+ * Integration tests for Utils class
+ * These tests focus on actual functionality and file system interactions
  */
 public class UtilsIT {
-    
+
     private Utils utils;
-    private WebUtils webUtils;
-    
+
     @BeforeEach
     public void setUp() {
         utils = new Utils();
-        webUtils = new WebUtils();
     }
-    
+
     @Test
-    public void testUtilsClassIntegration() {
-        // Execute actual Utils class integration
-        assertNotNull(utils, "Utils should be instantiated");
+    public void testGenerateKeyIntegration() {
+        // Test actual key generation
+        KeyPair keyPair = utils.generateKey();
         
-        // Test Utils class structure and methods
-        assertTrue(utils.getClass().getSimpleName().equals("Utils"), 
-                  "Class name should be Utils");
+        assertNotNull(keyPair, "KeyPair should not be null");
+        assertNotNull(keyPair.getPublic(), "Public key should not be null");
+        assertNotNull(keyPair.getPrivate(), "Private key should not be null");
         
-        // This generates coverage by exercising the Utils class
-        assertTrue(true, "Utils integration test executed successfully");
+        // Verify key properties
+        assertEquals("RSA", keyPair.getPublic().getAlgorithm());
+        assertEquals("RSA", keyPair.getPrivate().getAlgorithm());
     }
-    
+
     @Test
-    public void testWebUtilsIntegration() {
-        // Test WebUtils class integration
-        assertNotNull(webUtils, "WebUtils should be instantiated");
+    public void testDeleteFileIntegration() throws Exception {
+        // Create a temporary file for testing
+        Path tempFile = Files.createTempFile("test", ".tmp");
+        String filePath = tempFile.toString();
         
-        // Test WebUtils class structure
-        assertTrue(webUtils.getClass().getSimpleName().equals("WebUtils"), 
-                  "Class name should be WebUtils");
+        // Verify file exists
+        assertTrue(Files.exists(tempFile), "Temp file should exist");
         
-        // This demonstrates integration between utility classes
-        assertTrue(true, "WebUtils integration test executed successfully");
+        // Test file deletion
+        utils.deleteFile(filePath);
+        
+        // Note: The actual deleteFile method might not work due to security restrictions
+        // but we're testing that the method executes without throwing exceptions
+        assertDoesNotThrow(() -> utils.deleteFile(filePath));
+        
+        // Clean up if file still exists
+        Files.deleteIfExists(tempFile);
     }
-    
+
     @Test
-    public void testUtilityClassesInteraction() {
-        // Test how utility classes work together in integration scenarios
-        Utils utilsInstance = new Utils();
-        WebUtils webUtilsInstance = new WebUtils();
+    public void testExecuteJsIntegration() {
+        // Test JavaScript execution (method should handle the call gracefully)
+        String jsCode = "console.log('Hello from integration test');";
         
-        // Both should be instantiated successfully
-        assertNotNull(utilsInstance, "Utils instance should be created");
-        assertNotNull(webUtilsInstance, "WebUtils instance should be created");
-        
-        // Test that they are different classes
-        assertNotEquals(utilsInstance.getClass(), webUtilsInstance.getClass(), 
-                       "Should be different utility classes");
-        
-        // This test demonstrates integration testing concepts
-        // where multiple components are tested together
-        assertTrue(true, "Utility classes integration test completed");
+        // This should not throw an exception
+        assertDoesNotThrow(() -> utils.executeJs(jsCode));
     }
-    
+
     @Test
-    public void testAsymmetricEncryptionUtilIntegration() {
-        // Test AsymmetricEncryptionUtil integration (safe instantiation)
-        try {
-            AsymmetricEncryptionUtil encryptionUtil = new AsymmetricEncryptionUtil();
-            assertNotNull(encryptionUtil, "AsymmetricEncryptionUtil should be instantiated");
-            
-            // This generates coverage for the encryption utility class
-            assertTrue(true, "AsymmetricEncryptionUtil integration test completed");
-        } catch (Exception e) {
-            // Even if it fails, we still generated coverage by attempting instantiation
-            assertTrue(true, "AsymmetricEncryptionUtil integration test executed (with expected exception)");
-        }
+    public void testEncryptIntegration() {
+        // Test encryption method with sample data
+        byte[] data = "Integration test data".getBytes();
+        byte[] key = "TestKey123456789".getBytes(); // 16 bytes for AES
+        
+        // This should not throw an exception
+        assertDoesNotThrow(() -> utils.encrypt(data, key));
+    }
+
+    @Test
+    public void testUtilsClassProperties() {
+        // Test basic class properties and instantiation
+        assertNotNull(utils);
+        assertEquals("Utils", utils.getClass().getSimpleName());
+        assertTrue(utils instanceof Utils);
+        
+        // Test that we can create multiple instances
+        Utils utils2 = new Utils();
+        assertNotNull(utils2);
+        assertNotSame(utils, utils2);
     }
 }

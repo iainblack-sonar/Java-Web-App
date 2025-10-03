@@ -3,55 +3,110 @@ package demo.security.servlet;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+import demo.security.util.SessionHeader;
 
 /**
  * Integration tests for UserServlet
- * These tests demonstrate integration testing without complex dependencies
- * and generate meaningful code coverage for SonarQube
+ * These tests focus on servlet behavior and session management
  */
 public class UserServletIT {
-    
-    private UserServlet servlet;
-    
+
+    private UserServlet userServlet;
+    private HttpServletRequest request;
+    private HttpServletResponse response;
+    private HttpSession session;
+    private StringWriter stringWriter;
+    private PrintWriter printWriter;
+
     @BeforeEach
-    public void setUp() {
-        servlet = new UserServlet();
+    public void setUp() throws Exception {
+        userServlet = new UserServlet();
+        request = mock(HttpServletRequest.class);
+        response = mock(HttpServletResponse.class);
+        session = mock(HttpSession.class);
+        stringWriter = new StringWriter();
+        printWriter = new PrintWriter(stringWriter);
+        
+        when(response.getWriter()).thenReturn(printWriter);
+        when(request.getSession()).thenReturn(session);
     }
-    
+
     @Test
-    public void testUserServletInstantiation() {
-        // Test servlet instantiation - generates coverage!
-        assertNotNull(servlet, "UserServlet should be instantiated");
-        assertTrue(servlet instanceof UserServlet, "Should be UserServlet instance");
+    public void testDoGetWithValidSession() throws Exception {
+        // Setup session with valid user
+        when(session.getAttribute("username")).thenReturn("testuser");
+        when(session.getAttribute("sessionId")).thenReturn("session123");
         
-        // This test exercises the constructor and class loading
-        assertTrue(true, "UserServlet integration test - instantiation successful");
+        // Execute the servlet method
+        userServlet.doGet(request, response);
+        
+        // Verify response setup
+        verify(response).setContentType("text/html");
+        verify(response).getWriter();
+        
+        // Verify session was accessed
+        verify(session).getAttribute("username");
+        verify(session).getAttribute("sessionId");
     }
-    
+
     @Test
-    public void testServletClassIntegration() {
-        // Test servlet class integration without database dependencies
-        UserServlet testServlet = new UserServlet();
-        assertNotNull(testServlet, "Servlet should be created successfully");
+    public void testDoGetWithInvalidSession() throws Exception {
+        // Setup session with null values
+        when(session.getAttribute("username")).thenReturn(null);
+        when(session.getAttribute("sessionId")).thenReturn(null);
         
-        // Test that servlet class is properly structured
-        // This generates coverage by accessing the class
-        assertTrue(testServlet.getClass().getSimpleName().equals("UserServlet"), 
-                  "Class name should be UserServlet");
+        // Execute the servlet method
+        userServlet.doGet(request, response);
         
-        assertTrue(true, "Servlet class integration test completed");
+        // Verify response setup
+        verify(response).setContentType("text/html");
+        verify(response).getWriter();
+        
+        // Verify session was accessed
+        verify(session).getAttribute("username");
+        verify(session).getAttribute("sessionId");
     }
-    
+
     @Test
-    public void testServletInheritance() {
-        // Test servlet inheritance structure - integration concept
-        UserServlet testServlet = new UserServlet();
+    public void testSessionHeaderCreationIntegration() {
+        // Test SessionHeader creation and usage (since getSessionHeader is private)
+        SessionHeader header = new SessionHeader("integrationUser", "integration123");
         
-        // Verify servlet inheritance (extends HttpServlet)
-        assertNotNull(testServlet, "Servlet should be instantiated");
+        // Verify the result
+        assertNotNull(header);
+        assertEquals("integrationUser", header.getUsername());
+        assertEquals("integration123", header.getSessionId());
         
-        // This test exercises class hierarchy and generates coverage
-        // for the servlet class structure
-        assertTrue(true, "Servlet inheritance test completed");
+        // Test setters
+        header.setUsername("updatedUser");
+        header.setSessionId("updatedSession");
+        assertEquals("updatedUser", header.getUsername());
+        assertEquals("updatedSession", header.getSessionId());
+    }
+
+    @Test
+    public void testDoPostIntegration() throws Exception {
+        // Setup request parameters
+        when(request.getParameter("username")).thenReturn("newuser");
+        when(request.getParameter("action")).thenReturn("login");
+        
+        // Execute the servlet method
+        userServlet.doPost(request, response);
+        
+        // Verify response setup
+        verify(response).setContentType("text/html");
+        verify(response).getWriter();
+        
+        // Verify parameters were accessed
+        verify(request).getParameter("username");
+        verify(request).getParameter("action");
     }
 }
