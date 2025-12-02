@@ -75,4 +75,17 @@ public class InsecureUtils {
             e.printStackTrace();
         }
     }
+
+    // Command Injection Vulnerability
+    public static String executeCommand(String userInput) throws IOException {
+        Runtime runtime = Runtime.getRuntime();
+        Process process = runtime.exec("ping " + userInput);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        StringBuilder output = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            output.append(line);
+        }
+        return output.toString();
+    }
 }
