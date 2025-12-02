@@ -88,4 +88,15 @@ public class InsecureUtils {
         }
         return output.toString();
     }
+
+    // SQL Injection Vulnerability
+    public static String getUserData(HttpServletRequest request, java.sql.Connection connection) throws Exception {
+        String userId = request.getParameter("userId");
+        java.sql.Statement statement = connection.createStatement();
+        java.sql.ResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE id = '" + userId + "'");
+        if (resultSet.next()) {
+            return resultSet.getString("username");
+        }
+        return null;
+    }
 }
