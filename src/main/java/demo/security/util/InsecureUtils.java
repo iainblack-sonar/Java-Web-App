@@ -4,7 +4,6 @@ import org.xml.sax.InputSource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.*;
-import java.security.MessageDigest;
 import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -12,13 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public class InsecureUtils {
-    // Weak hash - MD5
-    public static String weakHash(String input) throws Exception {
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] hashBytes = md.digest(input.getBytes());
-        return Base64.getEncoder().encodeToString(hashBytes);
-    }
-
     // Hard-coded encryption key
     private static final String ENCRYPTION_KEY = "MyHardCodedKey12";
 

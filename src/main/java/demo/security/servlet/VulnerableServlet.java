@@ -31,11 +31,6 @@ public class VulnerableServlet extends HttpServlet {
             String serializedData = request.getParameter("data");
             Object obj = InsecureUtils.deserialize(serializedData);
             
-            // Weak Password Hash
-            String password = request.getParameter("password");
-            String hashedPassword = InsecureUtils.weakHash(password);
-            response.getWriter().write(hashedPassword);
-            
             // Using Hard-coded Credentials
             InsecureUtils.connectToDatabase();
             
