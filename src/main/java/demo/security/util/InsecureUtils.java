@@ -67,4 +67,21 @@ public class InsecureUtils {
             e.printStackTrace();
         }
     }
+
+    // SQL Injection Vulnerability
+    public static String findUser(HttpServletRequest request, java.sql.Connection connection) throws Exception {
+        String username = request.getParameter("username");
+        java.sql.Statement stmt = connection.createStatement();
+        java.sql.ResultSet rs = stmt.executeQuery("SELECT * FROM users WHERE name = '" + username + "'");
+        if (rs.next()) {
+            return rs.getString("email");
+        }
+        return null;
+    }
+
+    // Log Injection Vulnerability
+    public static void logUserAction(HttpServletRequest request, java.util.logging.Logger logger) {
+        String userInput = request.getParameter("action");
+        logger.info("User performed action: " + userInput);
+    }
 }
