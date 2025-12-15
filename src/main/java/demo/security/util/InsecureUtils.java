@@ -75,4 +75,28 @@ public class InsecureUtils {
             e.printStackTrace();
         }
     }
+
+    // Command Injection Vulnerability
+    public static String executeCommand(String userInput) throws IOException {
+        Runtime runtime = Runtime.getRuntime();
+        Process process = runtime.exec("ping " + userInput);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        StringBuilder output = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            output.append(line);
+        }
+        return output.toString();
+    }
+
+    // SQL Injection Vulnerability
+    public static String getUserData(HttpServletRequest request, java.sql.Connection connection) throws Exception {
+        String userId = request.getParameter("userId");
+        java.sql.Statement statement = connection.createStatement();
+        java.sql.ResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE id = '" + userId + "'");
+        if (resultSet.next()) {
+            return resultSet.getString("username");
+        }
+        return null;
+    }
 }
