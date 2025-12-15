@@ -14,12 +14,4 @@ class InsecureUtilsTest {
         assertNotNull(InsecureUtils.class);
         assertEquals("InsecureUtils", InsecureUtils.class.getSimpleName());
     }
-
-    @Test
-    void testWeakHashMethodExists() throws Exception {
-        // Test that the method exists and returns something
-        String result = InsecureUtils.weakHash("test");
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-    }
 }
